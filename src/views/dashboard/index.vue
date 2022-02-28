@@ -1,6 +1,8 @@
 <template>
   <div class="dashboard-editor-container">
-
+    <div class="nationwide">
+      <home-chart :chart-data="orderAmts"/>
+    </div>
     <el-row :gutter="40" class="panel-group">
       <el-col :xs="12" :sm="12" :lg="6" class="card-panel-col">
         <div class="card-panel" @click="handleSetLineChartData('newVisitis')">
@@ -73,13 +75,15 @@ import CountTo from 'vue-count-to'
 import LineChart from './LineChart'
 import PieChart from './PieChart'
 import BarChart from './BarChart'
+import HomeChart from './homeChart'
 
 export default {
   components: {
     CountTo,
     LineChart,
     PieChart,
-    BarChart
+    BarChart,
+    HomeChart
   },
   data() {
     return {
@@ -124,6 +128,11 @@ export default {
     padding: 16px 16px 0;
     margin-bottom: 32px;
   }
+}
+/* 全国地图闪烁 */
+.nationwide{
+  width: 100%;
+  height: 600px;
 }
 
 .panel-group {
