@@ -1,0 +1,311 @@
+<template>
+  <div class="app-container">
+
+    <!-- 查询和其他操作 -->
+    <div class="filter-container">
+      <el-input v-model="listQuery.goodsSn" clearable size="mini" class="filter-item" style="width: 200px;" placeholder="请输入商品编号"/>
+      <el-input v-model="listQuery.name" clearable size="mini" class="filter-item" style="width: 200px;" placeholder="请输入商品名称"/>
+      <el-select v-model="listQuery.approveStatusArray" multiple size="mini" style="width: 200px" class="filter-item" placeholder="请选择审批状态">
+        <el-option v-for="(key, value) in statusMap" :key="key" :label="key" :value="value"/>
+      </el-select>
+      <el-button size="mini" class="filter-item" type="primary" icon="el-icon-search" @click="handleFilter">查找</el-button>
+      <el-button size="mini" class="filter-item" type="primary" icon="el-icon-edit" @click="handleCreate">添加</el-button>
+      <el-button :loading="downloadLoading" size="mini" class="filter-item" type="warning" icon="el-icon-download" @click="handleDownload">导出</el-button>
+    </div>
+
+    <!-- 查询结果 -->
+    <el-table v-loading="listLoading" :data="list" size="small" element-loading-text="正在查询中。。。" border fit highlight-current-row>
+
+      <el-table-column type="expand">
+        <template slot-scope="props">
+          <el-form label-position="left" class="table-expand">
+            <el-form-item label="宣传画廊">
+              <img v-for="pic in props.row.gallery" :key="pic" :src="pic" class="gallery">
+            </el-form-item>
+            <el-form-item label="商品介绍">
+              <span>{{ props.row.brief }}</span>
+            </el-form-item>
+            <el-form-item label="商品单位">
+              <span>{{ props.row.unit }}</span>
+            </el-form-item>
+            <el-form-item label="关键字">
+              <span>{{ props.row.keywords }}</span>
+            </el-form-item>
+            <el-form-item label="类目ID">
+              <span>{{ props.row.categoryId }}</span>
+            </el-form-item>
+            <el-form-item label="品牌商ID">
+              <span>{{ props.row.brandId }}</span>
+            </el-form-item>
+            <el-form-item label="审批状态">
+              <span>{{ props.row.approveStatus | approveStatusFilter }}</span>
+            </el-form-item>
+            <el-form-item label="审批内容">
+              <span>{{ props.row.approveMsg }}</span>
+            </el-form-item>
+          </el-form>
+        </template>
+      </el-table-column>
+
+      <el-table-column align="center" min-width="110" label="商品编号" prop="goodsSn"/>
+
+      <el-table-column align="center" min-width="200" label="名称" prop="name" sortable/>
+
+      <el-table-column align="center" property="iconUrl" label="图片">
+        <template slot-scope="scope">
+          <img :src="scope.row.picUrl" width="40">
+        </template>
+      </el-table-column>
+
+      <el-table-column align="center" property="iconUrl" label="分享图">
+        <template slot-scope="scope">
+          <img :src="scope.row.shareUrl" width="40">
+        </template>
+      </el-table-column>
+
+      <el-table-column align="center" label="详情" prop="detail">
+        <template slot-scope="scope">
+          <el-dialog :visible.sync="detailDialogVisible" title="商品详情">
+            <div v-html="goodsDetail"/>
+          </el-dialog>
+          <el-button type="primary" size="mini" @click="showDetail(scope.row.detail)">查看</el-button>
+        </template>
+      </el-table-column>
+
+      <el-table-column align="center" label="专柜价格" prop="counterPrice"/>
+
+      <el-table-column align="center" label="当前价格" prop="retailPrice"/>
+      <!--
+      <el-table-column align="center" label="是否新品" prop="isNew">
+        <template slot-scope="scope">
+          <el-tag :type="scope.row.isNew ? 'success' : 'error' ">{{ scope.row.isNew ? '新品' : '非新品' }}</el-tag>
+        </template>
+      </el-table-column>
+
+      <el-table-column align="center" label="是否热品" prop="isHot">
+        <template slot-scope="scope">
+          <el-tag :type="scope.row.isHot ? 'success' : 'error' ">{{ scope.row.isHot ? '热品' : '非热品' }}</el-tag>
+        </template>
+      </el-table-column>
+      <el-table-column align="center" label="是否在售" prop="isOnSale">
+        <template slot-scope="scope">
+          <el-tag :type="scope.row.isOnSale ? 'success' : 'error' ">{{ scope.row.isOnSale ? '在售' : '未售' }}</el-tag>
+        </template>
+      </el-table-column>
+      -->
+
+      <el-table-column align="center" min-width="100px" label="审批状态" prop="orderStatus">
+        <template slot-scope="scope">
+          <el-tooltip v-if="scope.row.approveStatus=='2'" placement="top">
+            <div slot="content">{{ scope.row.approveMsg }}</div>
+            <el-tag :type="scope.row.approveStatus==2? 'danger' : 'primary' ">{{ scope.row.approveStatus | approveStatusFilter }}</el-tag>
+          </el-tooltip>
+          <el-tag v-else :type="scope.row.approveStatus==2? 'danger' : 'primary' ">{{ scope.row.approveStatus | approveStatusFilter }}</el-tag>
+        </template>
+      </el-table-column>
+
+      <el-table-column align="center" label="操作" width="150" class-name="small-padding fixed-width">
+        <template slot-scope="scope">
+          <el-button v-permission="['POST /admin/goods/approveGoods']" v-if="scope.row.approveStatus==0" type="warning" size="mini" @click="handleApprove(scope.row)">审批</el-button>
+          <el-button v-else type="primary" size="mini" @click="handleUpdate(scope.row)">编辑</el-button>
+          <el-button v-permission="['POST /admin/goods/delete']" type="danger" size="mini" @click="handleDelete(scope.row)">删除</el-button>
+        </template>
+      </el-table-column>
+    </el-table>
+
+    <pagination v-show="total>0" :total="total" :page.sync="listQuery.page" :limit.sync="listQuery.limit" @pagination="getList" />
+
+    <el-tooltip placement="top" content="返回顶部">
+      <back-to-top :visibility-height="100" />
+    </el-tooltip>
+
+    <!-- 商品上架审批 -->
+    <el-dialog :visible.sync="approveDialogVisible" title="商品上架审批">
+      <el-form ref="approveForm" :model="approveForm" status-icon label-position="left" label-width="100px" style="width: 600px; margin-left:50px;">
+        <el-form-item label="审批内容" prop="approveMsg">
+          <el-input v-model="approveForm.approveMsg" :rows="4" type="textarea" placeholder="请输入内容"/>
+        </el-form-item>
+      </el-form>
+      <div slot="footer" class="dialog-footer">
+        <el-button type="primary" @click="confirmApprove(1)">审批通过</el-button>
+        <el-button type="warning" @click="confirmApprove(2)">审批拒绝</el-button>
+        <el-button @click="approveDialogVisible = false">取消</el-button>
+      </div>
+    </el-dialog>
+
+  </div>
+</template>
+
+<style>
+	.el-dialog {
+    width: 60%;
+	}
+  .table-expand {
+    font-size: 0;
+  }
+  .table-expand label {
+    width: 100px;
+    color: #99a9bf;
+  }
+  .table-expand .el-form-item {
+    margin-right: 0;
+    margin-bottom: 0;
+  }
+  .gallery {
+    width: 80px;
+    margin-right: 10px;
+  }
+</style>
+
+<script>
+import { listGoods, approveGoods, deleteGoods } from '@/api/business/goods'
+import BackToTop from '@/components/BackToTop'
+import Pagination from '@/components/Pagination' // Secondary package based on el-pagination
+import { getToken } from '@/utils/auth'
+
+const statusMap = {
+  0: '待审批',
+  1: '审批通过',
+  2: '审批拒绝',
+  4: '未提交'
+}
+
+export default {
+  name: 'GoodsList',
+  components: { BackToTop, Pagination },
+  filters: {
+    approveStatusFilter(status) {
+      return statusMap[status]
+    }
+  },
+  data() {
+    return {
+      list: [],
+      total: 0,
+      listLoading: true,
+      listQuery: {
+        page: 1,
+        limit: 20,
+        goodsSn: undefined,
+        name: undefined,
+        sort: 'add_time',
+        order: 'desc',
+        approveStatusArray: []
+      },
+      statusMap,
+      goodsDetail: '',
+      isAdmin: false,
+      detailDialogVisible: false,
+      downloadLoading: false,
+      approveDialogVisible: false,
+      approveForm: {
+        goodsId: undefined,
+        approveStatus: undefined,
+        approveMsg: undefined
+      }
+    }
+  },
+  computed: {
+    headers() {
+      return {
+        'X-Dts-Admin-Token': getToken()
+      }
+    }
+  },
+  created() {
+    this.getList()
+  },
+  methods: {
+    getList() {
+      this.listLoading = true
+      listGoods(this.listQuery).then(response => {
+        this.list = response.data.data.items
+        this.total = response.data.data.total
+        this.isAdmin = response.data.data.isAdmin
+        this.listLoading = false
+      }).catch(() => {
+        this.list = []
+        this.total = 0
+        this.listLoading = false
+      })
+    },
+    handleFilter() {
+      this.listQuery.page = 1
+      this.getList()
+    },
+    handleCreate() {
+      this.$router.push({ path: '/goods/create' })
+    },
+    handleUpdate(row) {
+      this.$router.push({ path: '/goods/edit', query: { id: row.id }})
+    },
+    showDetail(detail) {
+      this.goodsDetail = detail
+      this.detailDialogVisible = true
+    },
+    handleDelete(row) {
+      deleteGoods(row).then(response => {
+        this.$notify.success({
+          title: '成功',
+          message: '删除成功'
+        })
+        const index = this.list.indexOf(row)
+        this.list.splice(index, 1)
+      }).catch(response => {
+        this.$notify.error({
+          title: '失败',
+          message: response.data.errmsg
+        })
+      })
+    },
+    handleApprove(row) {
+      this.approveForm.goodsId = row.id
+      this.approveForm.approveMsg = ''
+      this.approveDialogVisible = true
+      this.$nextTick(() => {
+        this.$refs['approveForm'].clearValidate()
+      })
+    },
+    confirmApprove(approveStatus) {
+      this.approveForm.approveStatus = approveStatus
+      if (this.approveForm.approveMsg === '' || this.approveForm.approveMsg == null) {
+        if (this.approveForm.approveStatus === 1) {
+          this.approveForm.approveMsg = '审批通过'
+        } else {
+          this.$notify.error({
+            title: '温馨提示',
+            message: '请输入审批内容'
+          })
+          return
+        }
+      }
+      this.$refs['approveForm'].validate((valid) => {
+        if (valid) {
+          approveGoods(this.approveForm).then(response => {
+            this.approveDialogVisible = false
+            this.$notify.success({
+              title: '成功',
+              message: '审批成功'
+            })
+            this.getList()
+          }).catch(response => {
+            this.$notify.error({
+              title: '审批失败',
+              message: response.data.errmsg
+            })
+          })
+        }
+      })
+    },
+    handleDownload() {
+      this.downloadLoading = true
+      import('@/vendor/Export2Excel').then(excel => {
+        const tHeader = ['商品ID', '商品编号', '名称', '专柜价格', '当前价格', '是否新品', '是否热品', '是否在售', '首页主图', '宣传图片列表', '商品介绍', '详细介绍', '商品图片', '商品单位', '关键字', '类目ID', '品牌商ID']
+        const filterVal = ['id', 'goodsSn', 'name', 'counterPrice', 'retailPrice', 'isNew', 'isHot', 'isOnSale', 'listPicUrl', 'gallery', 'brief', 'detail', 'picUrl', 'goodsUnit', 'keywords', 'categoryId', 'brandId']
+        excel.export_json_to_excel2(tHeader, this.list, filterVal, '商品信息')
+        this.downloadLoading = false
+      })
+    }
+  }
+}
+</script>
