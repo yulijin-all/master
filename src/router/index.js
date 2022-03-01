@@ -90,12 +90,56 @@ export const asyncRouterMap = [
     },
     children: [
       {
+        path: 'visitor',
+        component: () => import('@/views/user/visitor'),
+        name: 'visitor',
+        meta: {
+          perms: ['GET /admin/user/visitor'],
+          title: '访客管理',
+          icon: 'user',
+          noCache: true
+        }
+      },
+      {
         path: 'user',
         component: () => import('@/views/user/user'),
         name: 'user',
         meta: {
           perms: ['GET /admin/user/list'],
           title: '会员管理',
+          icon: 'user',
+          noCache: true
+        }
+      },
+      {
+        path: 'agent',
+        component: () => import('@/views/user/agent'),
+        name: 'agent',
+        meta: {
+          perms: ['GET /admin/user/agent'],
+          title: '代理商管理',
+          icon: 'user',
+          noCache: true
+        }
+      },
+      {
+        path: 'agentcheck',
+        component: () => import('@/views/user/agentcheck'),
+        name: 'agentcheck',
+        meta: {
+          perms: ['GET /admin/user/agentcheck'],
+          title: '代理商申请列表',
+          icon: 'user',
+          noCache: true
+        }
+      },
+      {
+        path: 'partnercheck',
+        component: () => import('@/views/user/partnercheck'),
+        name: 'partnercheck',
+        meta: {
+          perms: ['GET /admin/user/partnercheck'],
+          title: '合伙人列表',
           icon: 'user',
           noCache: true
         }

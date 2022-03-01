@@ -1,0 +1,26 @@
+.userFrom{
+    width: 100%;
+    position: relative;
+}
+.userimg{
+    position: absolute;
+    right: 100px;
+    top:0;
+    width: 140px;
+    height: 160px;
+    padding: 10px;
+    border: 1px solid #eee;
+    border-radius: 6px;
+}
+.userimg img{
+    width: 100%;
+    height: 100%;
+}
+.mydialog .el-dialog__header{
+    border-bottom: 1px solid #eee;
+}
+
+.mydialog .el-dialog__footer{
+    border-top: 1px solid #eee;
+    text-align: center;
+}
