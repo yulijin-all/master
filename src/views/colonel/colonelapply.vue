@@ -1,5 +1,5 @@
 <template>
-  <!-- 合伙人列表 -->
+  <!-- 团长管理 - 团长申请列表 -->
   <div class="app-container">
     <!-- 查询和其他操作 -->
     <div class="filter-container">
@@ -18,7 +18,7 @@
 
       <el-table-column align="center" label="用户名" prop="nickname"/>
 
-      <el-table-column align="center" label="合伙人姓名" prop="nickname"/>
+      <el-table-column align="center" label="用户姓名" prop="nickname"/>
 
       <el-table-column align="center" label="手机号码" prop="mobile"/>
 
@@ -41,25 +41,33 @@
 
     <pagination v-show="total>0" :total="total" :page.sync="listQuery.page" :limit.sync="listQuery.limit" @pagination="getList" />
 
-    <!-- 用户设置合伙人 同意 -->
-    <el-dialog :visible.sync="isdialog" :before-close="handleClose" title="用户升级为合伙人" width="540px" class="mydialog">
-      <el-form ref="approveForm" status-icon label-position="right" label-width="180px">
-        <el-form-item label="选择合伙人管理店铺：">
-          <el-select v-model="ckpartar" collapse-tags multiple filterable placeholder="请选择" @change="setckpartnerlist">
+    <!-- 用户升级为团长 同意 -->
+    <el-dialog :visible.sync="isdialog" :title="dialogtitle" :before-close="handleClose" width="540px" class="mydialog">
+      <el-form ref="approveForm" status-icon label-position="right" label-width="130px">
+        <el-form-item label="设置用户等级：">
+          <el-select v-model="approveForm.lv" placeholder="请选择">
             <el-option
-              v-for="item in ckarr"
+              v-for="item in colonellist"
               :key="item.id"
-              :label="item.name"
-              :value="JSON.stringify(item)"/>
+              :label="item.label"
+              :value="item.id"/>
           </el-select>
         </el-form-item>
-        <el-form-item label="已选择合伙人管理店铺：">
-          <div v-for="(it,inx) in ckpartnerlist" :key="inx" class="ckpartarbox">
-            <div class="ckpartar">
-              <span>{{ it.name }}</span>
-              <i class="el-icon-circle-close" @click="delitck(inx)"/>
-            </div>
-          </div>
+        <el-form-item label="团长有效期：">
+          <el-date-picker
+            v-model="approveForm.itemr"
+            :format="'yyyy-MM-dd'"
+            type="daterange"
+            value-format="yyyy-MM-dd"
+            range-separator="至"
+            start-placeholder="开始日期"
+            end-placeholder="结束日期"/>
+        </el-form-item>
+        <el-form-item label="是否上下级分佣：">
+          <el-radio-group v-model="approveForm.radio">
+            <el-radio :label="1">是</el-radio>
+            <el-radio :label="0">否</el-radio>
+          </el-radio-group>
         </el-form-item>
       </el-form>
       <span slot="footer" class="dialog-footer">
@@ -90,6 +98,13 @@ export default {
       ], // 需要调接口返回的店铺数组列表
       dialogtitle: '', // 设置代理商弹窗的标题
       listLoading: true, // 表格的loading
+      approveForm: { lv: '', itemr: '', radio: null }, // 打开设置角色的弹窗
+      colonellist: [
+        { label: '青铜', id: 1 },
+        { label: '白银', id: 2 },
+        { label: '黄金', id: 3 },
+        { label: '白金', id: 4 }
+      ], // 团长等级数组  - 需要通过接口获取
       approveDialogVisible: false, // 打开设置角色的弹窗
       listQuery: {
         page: 1,
@@ -145,7 +160,7 @@ export default {
     },
     // 点击设置代理商的保存
     sersubmit() {
-      console.log(this.ckpartnerlist)
+      console.log(this.approveForm)
       // 调接口保存，成功后刷新页面
     },
     // 获取数据
@@ -168,11 +183,11 @@ export default {
     },
     // 点击列表中的设置为代理商
     handleDetail(row) {
-      this.dialogtitle = '是否将 ' + row.nickname + ' 升级为代理商'
+      this.dialogtitle = '用户 ' + row.nickname + ' 升级为团长'
       this.isdialog = true
       // 调接口直接设置为会员 ， 成功后刷新一下页面
     },
-    // 拒绝此人成为代理商
+    // 拒绝此人成为团长
     delItem(row) {
       this.$prompt('请填写拒绝理由', '提示', {
         confirmButtonText: '确定',

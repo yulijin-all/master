@@ -231,7 +231,7 @@ export default {
       genderDic: ['未知', '男', '女'],
       levelDic: ['普通用户', 'VIP用户', '代理'],
       statusDic: ['可用', '禁用', '注销', '代理申请'],
-      detailDialogVisible: false,
+      detailDialogVisible: false, // 打开详情的变量
       agencyDetail: {
         userUrl: require('@/assets/image/tansongyun.png'),
         nickname: '谭松韵', // 名称
@@ -248,8 +248,8 @@ export default {
         groupnumber: '20', // 团次数
         couponsRemainingsum: '300.00', // 优惠卷线上余额
         couponsOfflineRemainingsum: '10000.00' // 优惠价线下余额
-      },
-      approveDialogVisible: false,
+      }, // 详情的对象
+      approveDialogVisible: false, // 设置用户角色的变量
       approveForm: {
         userId: undefined,
         settlementRate: undefined

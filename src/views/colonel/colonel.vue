@@ -1,5 +1,5 @@
 <template>
-  <!-- 代理商管理 -->
+  <!-- 团长管理  团长列表 -->
   <div class="app-container">
     <!-- 查询和其他操作 -->
     <div class="filter-container">
@@ -18,25 +18,23 @@
 
       <el-table-column align="center" label="用户名" prop="nickname"/>
 
-      <el-table-column align="center" label="姓名" prop="nickname"/>
-
-      <el-table-column align="center" label="手机号码" prop="mobile"/>
-
       <el-table-column align="center" label="性别" prop="gender">
         <template slot-scope="scope">
           {{ genderDic[scope.row.gender] }}
         </template>
       </el-table-column>
 
-      <el-table-column align="center" label="代理地址" prop="agentMap" />
+      <el-table-column align="center" label="团长级别" prop="nickname"/>
 
-      <el-table-column align="center" label="申请时间" prop="birthday"/>
+      <el-table-column align="center" label="新老团长" prop="mobile"/>
+
+      <el-table-column align="center" label="总余额" prop="birthday"/>
 
       <el-table-column align="center" label="操作" width="200" class-name="small-padding fixed-width">
         <template slot-scope="scope">
           <el-button type="text" size="small" @click="lookopen(scope.row)">查看详情</el-button>
-          <el-button type="text" size="small" @click="handleDetail(scope.row)">同意</el-button>
-          <el-button type="text" style="color:red;" size="small" @click="delItem(scope.row)">拒绝</el-button>
+          <el-button type="text" size="small" @click="handleDetail(scope.row)">设置等级</el-button>
+          <el-button type="text" style="color:red;" size="small" @click="lookgroup(scope.row)">查看团成员</el-button>
         </template>
       </el-table-column>
 
@@ -44,14 +42,17 @@
 
     <pagination v-show="total>0" :total="total" :page.sync="listQuery.page" :limit.sync="listQuery.limit" @pagination="getList" />
 
-    <!-- 用户设置代理商 同意 -->
+    <!-- 设置用户等级 -->
     <el-dialog :visible.sync="isdialog" :title="dialogtitle" :before-close="handleClose" width="440px" class="mydialog">
-      <el-form ref="approveForm" :model="approveForm" status-icon label-position="right" label-width="100px">
-        <el-form-item label="申请代理地址：" label-width="140px">
-          {{ approveForm.map }}
-        </el-form-item>
-        <el-form-item label="代理地址：" label-width="140px">
-          <el-cascader v-model="approveForm.cascader" :options="mapoptions" :props="optionProps"/>
+      <el-form ref="approveForm" :model="approveForm" status-icon label-position="right" label-width="140px">
+        <el-form-item label="设置用户等级：">
+          <el-select v-model="approveForm.lv" placeholder="请选择">
+            <el-option
+              v-for="item in colonellist"
+              :key="item.id"
+              :label="item.label"
+              :value="item.id"/>
+          </el-select>
         </el-form-item>
       </el-form>
       <span slot="footer" class="dialog-footer">
@@ -113,6 +114,30 @@
         <el-button type="primary" @click="detailDialogVisible = false">确 定</el-button>
       </span>
     </el-dialog>
+    <!-- 打开团成员列表 -->
+    <el-dialog :visible.sync="isfroupdialog" :title="dialoggrouptitle" :before-close="handlefroupClose" width="700px" class="mydialog">
+      <div class="grouplist">
+        <el-table :data="groupnumlist" border stripe style="width: 100%">
+          <el-table-column align="center" prop="date" label="成员头像" width="140">
+            <template slot-scope="scope">
+              <div class="groupbox_img">
+                <div class="group_img">
+                  <img :src="scope.row.userUrl" alt="">
+                </div>
+              </div>
+            </template>
+          </el-table-column>
+          <el-table-column align="center" prop="nickname" label="成员姓名"/>
+          <el-table-column align="center" prop="mobile" label="成员手机号"/>
+        </el-table>
+        <div class="tc mt10">
+          <el-pagination :current-page.sync="grouppage.pageNum" :page-size="grouppage.pageSize" :total="grouppage.total" background layout="prev, pager, next"/>
+        </div>
+      </div>
+      <span slot="footer" class="dialog-footer">
+        <el-button type="primary" @click="handlefroupClose">关 闭</el-button>
+      </span>
+    </el-dialog>
   </div>
 </template>
 
@@ -130,7 +155,7 @@ export default {
       dialogtitle: '', // 设置代理商弹窗的标题
       listLoading: true, // 表格的loading
       approveDialogVisible: false, // 打开设置角色的弹窗
-      approveForm: { cascader: '', map: '湖北/武汉/江夏区' }, // 打开设置角色的弹窗
+      approveForm: { lv: '' }, // 打开设置角色的弹窗
       listQuery: {
         page: 1,
         limit: 20,
@@ -145,11 +170,22 @@ export default {
       statusDic: ['可用', '禁用', '注销', '代理申请'], // 用户状态
       mapoptions: getmapdata(), // 获取省市区地址列表
       isdialog: false, // 弹窗的变量
-      optionProps: {
-        value: 'Code',
-        label: 'Name',
-        children: 'ChildList'
-      }, // 代理地址的参数变量
+      isfroupdialog: false, // 团成员弹窗列表变量
+      dialoggrouptitle: '',
+      grouppage: { total: 0, pageNum: 1, pageSize: 10 }, // 团成员的分页
+      groupnumlist: [
+        { userUrl: require('@/assets/image/tansongyun.png'), nickname: '谭松韵', mobile: '13144445555' },
+        { userUrl: require('@/assets/image/tansongyun.png'), nickname: '谭松韵', mobile: '13144445555' },
+        { userUrl: require('@/assets/image/tansongyun.png'), nickname: '谭松韵', mobile: '13144445555' },
+        { userUrl: require('@/assets/image/tansongyun.png'), nickname: '谭松韵', mobile: '13144445555' },
+        { userUrl: require('@/assets/image/tansongyun.png'), nickname: '谭松韵', mobile: '13144445555' }
+      ], // 团成员列表
+      colonellist: [
+        { label: '青铜', id: 1 },
+        { label: '白银', id: 2 },
+        { label: '黄金', id: 3 },
+        { label: '白金', id: 4 }
+      ], // 团长等级数组  - 需要通过接口获取
       detailDialogVisible: false, // 查看详情的变量
       agencyDetail: {
         userUrl: require('@/assets/image/tansongyun.png'),
@@ -186,11 +222,11 @@ export default {
       this.listQuery.mobile = ''
       this.getList()
     },
-    // 关闭设置代理商的弹窗
+    // 关闭设置团长级别
     handleClose() {
       this.isdialog = false
     },
-    // 点击设置代理商的保存
+    // 点击设置团长级别的保存
     sersubmit() {
       console.log(this.approveForm)
       // 调接口保存，成功后刷新页面
@@ -213,15 +249,25 @@ export default {
       this.listQuery.page = 1
       this.getList()
     },
-    // 点击列表中的设置为代理商
+    // 点击列表中的设置团长级别
     handleDetail(row) {
-      this.dialogtitle = '是否将 ' + row.nickname + ' 升级为代理商'
+      this.dialogtitle = '升级团长 ' + row.nickname + ' 的级别'
       this.isdialog = true
       // 调接口直接设置为会员 ， 成功后刷新一下页面
     },
     // 打开详情窗口
     lookopen() {
       this.detailDialogVisible = true
+    },
+    // 打开团成员弹窗
+    lookgroup(val) {
+      this.dialoggrouptitle = '查看 ' + val.nickname + ' 团长的团成员'
+      // 调接口获取成员列表
+      this.isfroupdialog = true
+    },
+    // 关闭团成员的弹窗
+    handlefroupClose() {
+      this.isfroupdialog = false
     },
     // 拒绝此人成为代理商
     delItem(row) {

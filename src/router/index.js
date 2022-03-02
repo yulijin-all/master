@@ -212,7 +212,50 @@ export const asyncRouterMap = [
       }
     ]
   },
-
+  {
+    path: '/colonel',
+    component: Layout,
+    redirect: 'noredirect',
+    alwaysShow: true,
+    name: 'userManage',
+    meta: {
+      title: '团长管理',
+      icon: 'peoples'
+    },
+    children: [
+      {
+        path: 'colonel',
+        component: () => import('@/views/colonel/colonel'),
+        name: 'colonel',
+        meta: {
+          perms: ['GET /admin/colonel/colonel'],
+          title: '团长列表',
+          icon: 'user',
+          noCache: true
+        }
+      },
+      {
+        path: 'colonelapply',
+        component: () => import('@/views/colonel/colonelapply'),
+        name: 'colonelapply',
+        meta: {
+          title: '团长申请列表',
+          icon: 'user',
+          noCache: true
+        }
+      },
+      {
+        path: 'colonelupgradeapply',
+        component: () => import('@/views/colonel/colonelupgradeapply'),
+        name: 'colonelupgradeapply',
+        meta: {
+          title: '团长升级申请列表',
+          icon: 'user',
+          noCache: true
+        }
+      }
+    ]
+  },
   {
     path: '/mall',
     component: Layout,
